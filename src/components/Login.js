@@ -5,6 +5,9 @@ import RaisedButton from 'material-ui/RaisedButton';
 import {Card} from 'material-ui/Card';
 import Done from 'material-ui/svg-icons/communication/vpn-key';
 
+
+import RebrandlyApi from '../services/rebrandlyApi';
+
 const style = {
     margin: 12,
   };
@@ -57,7 +60,7 @@ class Login extends Component{
                     <br />
 
                     <RaisedButton label="Login" primary={true} style={style}
-                    icon= {<Done />}
+                 
                     labelPosition="before"
                     onClick={() => this.onSubmit()}
                  />
@@ -76,34 +79,45 @@ onApikeyChange(e){
 }
 
 onSubmit(){
-    fetch('https://api.rebrandly.com/v1/account',
-{
-    headers: {
-        apikey: this.state.apikey
-    }
-})
-.then(response => {
-    if(response.ok) {
-        response.json()
-        .then(data => {
-            console.log(data)
-            if(data.email ===this.state.email){
-                console.log("Right User")
-            }
-            else{
-                alert("Not authorized user")
-            }
-        })
-    }
   
-    else{
-        alert(response.statusText)
-    }
+	this.getAccountDetail(this.state.apikey)
+    .then(account => {
+      if(account.email === this.state.email) {
+        sessionStorage.setItem('apikey', this.state.apikey)
+        sessionStorage.setItem('email', this.state.email)
+        this.props.history.push('/AdminBoard')
+      }
+      else {
+        alert('Credentail mis match')
+      }
     })
+    .catch(error => {
+      alert(error.message)
+    })
+  }
+
+  getAccountDetail(apikey) {
+    return RebrandlyApi.get('/account', {headers: {apikey: apikey}})
+  }
+
+  componentWillMount() {
+    const apikeySession = sessionStorage.getItem('apikey')
+    if(apikeySession) {
+      this.getAccountDetail(apikeySession)
+      .then(account => {
+        if(account) {
+          this.props.history.push('/AdminBoard')
+        }
+      })
+      .catch(error => {
+        sessionStorage.removeItem('apikey')
+      })
+    }
+  }
    
 }
 
-}
+
 
 
 export default Login;
